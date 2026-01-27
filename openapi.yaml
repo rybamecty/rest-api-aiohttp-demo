@@ -1,0 +1,129 @@
+openapi: 3.0.0
+info:
+  title: Culture Analytics API
+  version: 1.0.0
+  description: API для тестового задания
+
+servers:
+  - url: http://localhost:8080
+    description: Development server
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /data:
+    get:
+      summary: Get all data items
+      operationId: listData
+      responses:
+        '200':
+          description: List of data items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DataItem'
+
+    post:
+      summary: Create new data item
+      operationId: createData
+   requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataItemCreate'
+      responses:
+        '201':
+          description: Item created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataItem'
+        '400':
+          description: Invalid input
+
+  /data/{id}:
+    get:
+      summary: Get data item by ID
+      operationId: getData
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Data item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataItem'
+        '404':
+          description: Item not found
+
+    delete:
+      summary: Delete data item
+      operationId: deleteData
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Item deleted
+        '404':
+          description: Item not found
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - version
+      properties:
+        status:
+          type: string
+          example: "ok"
+        version:
+          type: string
+          example: "1.0.0"
+
+    DataItemCreate:
+      type: object
+      required:
+        - name
+        - value
+      properties:
+        name:
+          type: string
+          minLength: 1
+          example: "Продажи"
+        value:
+          type: number
+          format: float
+          example: 1000.50
+
+    DataItem:
+      allOf:
+        - $ref: '#/components/schemas/DataItemCreate'
+        - type: object
+          properties:
+            id:
+              type: integer
+              example: 1
