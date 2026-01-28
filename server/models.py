@@ -1,29 +1,86 @@
-"""Модели данных для API"""
+"""Data models for API"""
 
 from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional
 
 
 class DataItem(BaseModel):
-    """Модель элемента данных"""
+    """Model for data item"""
 
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
                 "id": 1,
-                "name": "Продажи",
+                "name": "Sales",
                 "value": 1000.50
             }
         }
     )
 
-    id: Optional[int] = Field(None, description="ID элемента")
-    name: str = Field(..., description="Название элемента", min_length=1)
-    value: float = Field(..., description="Значение")
+    id: int | None = Field(
+        default=None,
+        description="Item ID (auto-generated)",
+        examples=[1, 2, 3]
+    )
+    name: str = Field(
+        description="Item name",
+        min_length=1,
+        max_length=100,
+        examples=["Sales", "Marketing", "Operations"]
+    )
+    value: float = Field(
+        description="Item value",
+        examples=[1000.50, 2500.75, 500.25]
+    )
 
 
 class HealthResponse(BaseModel):
-    """Ответ health check"""
+    """Health check response"""
 
-    status: str = Field(..., description="Статус сервиса")
-    version: str = Field(..., description="Версия API")
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "status": "ok",
+                "version": "1.0.0"
+            }
+        }
+    )
+
+    status: str = Field(
+        description="Service status",
+        examples=["ok", "error", "maintenance"]
+    )
+    version: str = Field(
+        description="API version",
+        examples=["1.0.0", "2.0.0", "3.1.0"]
+    )
+
+
+# Дополнительно можно добавить валидаторы
+class DataItemCreate(BaseModel):
+    """Model for creating data item (without ID)"""
+
+    name: str = Field(
+        description="Item name",
+        min_length=1,
+        max_length=100
+    )
+    value: float = Field(
+        description="Item value",
+        ge=0.0  # greater or equal to 0
+    )
+
+
+class DataItemUpdate(BaseModel):
+    """Model for updating data item"""
+
+    name: str | None = Field(
+        default=None,
+        description="Item name",
+        min_length=1,
+        max_length=100
+    )
+    value: float | None = Field(
+        default=None,
+        description="Item value",
+        ge=0.0
+    )

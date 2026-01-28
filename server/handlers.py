@@ -1,60 +1,130 @@
-"""Обработчики HTTP запросов"""
+"""HTTP request handlers"""
+
+import logging
+from http import HTTPStatus
+from typing import Final
 
 from aiohttp import web
-from typing import Dict
-from .models import DataItem, HealthResponse
+from pydantic import ValidationError
 
-# Хранилище в памяти
-storage: Dict[int, DataItem] = {}
-next_id = 1
+from server.models import DataItem, HealthResponse
+from server.config import config
+
+# Setup logging
+logger: Final = logging.getLogger(__name__)
+
+# In-memory storage
+storage: dict[int, DataItem] = {}
+next_id: int = 1
+
+
+def _error_response(
+    message: str,
+    status: HTTPStatus,
+    details: list[dict] | None = None
+) -> web.Response:
+    """Helper for error responses"""
+    response_data = {"error": message}
+    if details:
+        response_data["details"] = details
+
+    return web.json_response(
+        response_data,
+        status=status
+    )
 
 
 async def health_check(request: web.Request) -> web.Response:
-    """GET /health - Проверка работоспособности сервиса"""
-    response = HealthResponse(status="ok", version="1.0.0")
-    return web.json_response(response.model_dump())
+    """Health check endpoint"""
+    logger.info("Health check requested")
+
+    health = HealthResponse(
+        status="ok",
+        version=config.API_VERSION
+    )
+    return web.json_response(
+        health.model_dump(),
+        status=HTTPStatus.OK
+    )
 
 
 async def create_data(request: web.Request) -> web.Response:
-    """POST /data - Создание нового элемента данных"""
+    """Create new data item"""
     global next_id
 
     try:
         data = await request.json()
+        logger.info(f"Creating new item: {data}")
+
         item = DataItem(**data)
         item.id = next_id
-
         storage[next_id] = item
         next_id += 1
 
-        return web.json_response(item.model_dump(), status=201)
+        logger.info(f"Item created successfully with id={item.id}")
+        return web.json_response(
+            item.model_dump(),
+            status=HTTPStatus.CREATED
+        )
+
+    except ValidationError as e:
+        logger.warning(f"Validation error: {e}")
+        return _error_response(
+            "Invalid data",
+            HTTPStatus.BAD_REQUEST,
+            e.errors()
+        )
     except Exception as e:
-        return web.json_response({"error": str(e)}, status=400)
-
-
-async def get_data(request: web.Request) -> web.Response:
-    """GET /data/{id} - Получение элемента по ID"""
-    item_id = int(request.match_info["id"])
-
-    if item_id not in storage:
-        return web.json_response({"error": "Item not found"}, status=404)
-
-    item = storage[item_id]
-    return web.json_response(item.model_dump())
+        logger.error(f"Unexpected error: {e}")
+        return _error_response(
+            "Internal server error",
+            HTTPStatus.INTERNAL_SERVER_ERROR
+        )
 
 
 async def list_data(request: web.Request) -> web.Response:
-    """GET /data - Получение списка всех элементов"""
+    """Get all data items"""
+    count = len(storage)
+    logger.info(f"Listing all items, total count: {count}")
+
     items = [item.model_dump() for item in storage.values()]
-    return web.json_response(items)
+    return web.json_response(items, status=HTTPStatus.OK)
+
+
+async def get_data(request: web.Request) -> web.Response:
+    """Get data item by ID"""
+    item_id = int(request.match_info["id"])
+    logger.info(f"Retrieving item with id={item_id}")
+
+    if item_id not in storage:
+        logger.warning(f"Item with id={item_id} not found")
+        return _error_response(
+            f"Item with id {item_id} not found",
+            HTTPStatus.NOT_FOUND
+        )
+
+    item = storage[item_id]
+    return web.json_response(
+        item.model_dump(),
+        status=HTTPStatus.OK
+    )
 
 
 async def delete_data(request: web.Request) -> web.Response:
-    """DELETE /data/{id} - Удаление элемента"""
+    """Delete data item by ID"""
     item_id = int(request.match_info["id"])
+    logger.info(f"Deleting item with id={item_id}")
 
     if item_id not in storage:
-        return web.json_response({"error": "Item not found"}, status=404)
+        logger.warning(f"Item with id={item_id} not found")
+        return _error_response(
+            f"Item with id {item_id} not found",
+            HTTPStatus.NOT_FOUND
+        )
 
     del storage[item_id]
-    return web.json_response({"message": "Deleted successfully"}, status=200)
+    logger.info(f"Item with id={item_id} deleted successfully")
+    return web.json_response(
+        {"message": "Item deleted"},
+        status=HTTPStatus.OK
+    )

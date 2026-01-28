@@ -1,213 +1,236 @@
-# Culture Analytics - Тестовое задание
+# Culture Analytics - Test Assignment
 
-REST API на aiohttp для тестового задания Junior-разработчика SaaS-сервиса.
+REST API with aiohttp for Junior SaaS Developer position.
 
-## Структура проекта
+## Project Structure
 
 ```
 culture-analytics/
-├── server/              # Серверная часть на aiohttp
-│   ├── app.py          # Основное приложение
-│   ├── handlers.py     # HTTP обработчики
-│   └── models.py       # Pydantic модели
-├── client/             # Клиентская часть
-│   ├── simple_client.py       # Ручной клиент
-│   └── generated/             # Автосгенерированный клиент
-├── tests/              # Тесты
-│   ├── test_server.py         # Тесты сервера
-│   └── test_simple_client.py  # Тесты клиента
-├── openapi.yaml        # OpenAPI спецификация
-├── requirements.txt    # Зависимости
-└── pytest.ini          # Настройки pytest
+├── app.py               # Main application entry point
+├── server/              # Server components
+│   ├── config.py       # Application configuration
+│   ├── handlers.py     # HTTP request handlers
+│   └── models.py       # Pydantic data models
+├── client/             # Client implementations
+│   ├── simple_client.py       # Manual aiohttp client
+│   └── generated/             # Auto-generated client
+├── tests/              # Test suite
+│   ├── test_server.py         # Server tests
+│   └── test_simple_client.py  # Client tests
+├── openapi.yaml        # OpenAPI specification
+├── requirements.txt    # Dependencies
+└── pytest.ini          # Pytest configuration
 ```
 
-## Установка
+## Installation
 
 ```bash
-# Создать виртуальное окружение
+# Create virtual environment
 python -m venv venv
 
-# Активировать (Linux/Mac)
+# Activate (Linux/Mac)
 source venv/bin/activate
 
-# Активировать (Windows)
+# Activate (Windows)
 venv\Scripts\activate
 
-# Установить зависимости
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-## Запуск сервера
+## Configuration
+
+Application can be configured via environment variables:
 
 ```bash
-python -m server.app
+# Server configuration
+export HOST=0.0.0.0        # Server host (default: 0.0.0.0)
+export PORT=8080           # Server port (default: 8080)
 ```
 
-Сервер запустится на `http://localhost:8080`
+Or create `.env` file:
+```
+HOST=0.0.0.0
+PORT=8080
+```
+
+## Running the Server
+
+```bash
+python app.py
+```
+
+Server will start at `http://localhost:8080`
 
 ## API Endpoints
 
-- `GET /health` - Проверка работоспособности сервиса
-- `POST /data` - Создать новый элемент данных
-- `GET /data` - Получить список всех элементов
-- `GET /data/{id}` - Получить элемент по ID
-- `DELETE /data/{id}` - Удалить элемент по ID
+- `GET /health` - Service health check
+- `POST /data` - Create new data item
+- `GET /data` - Get all data items
+- `GET /data/{id}` - Get item by ID
+- `DELETE /data/{id}` - Delete item by ID
 
-## Примеры использования API
+## Usage Examples
 
-### Health check
+### Health Check
 ```bash
 curl http://localhost:8080/health
 ```
 
-Ответ:
+Response:
 ```json
 {"status": "ok", "version": "1.0.0"}
 ```
 
-### Создать элемент
+### Create Item
 ```bash
 curl -X POST http://localhost:8080/data \
   -H "Content-Type: application/json" \
-  -d '{"name": "Продажи", "value": 1000.50}'
+  -d '{"name": "Sales", "value": 1000.50}'
 ```
 
-Ответ:
+Response:
 ```json
-{"id": 1, "name": "Продажи", "value": 1000.5}
+{"id": 1, "name": "Sales", "value": 1000.5}
 ```
 
-### Получить все элементы
+### Get All Items
 ```bash
 curl http://localhost:8080/data
 ```
 
-### Получить элемент по ID
+### Get Item by ID
 ```bash
 curl http://localhost:8080/data/1
 ```
 
-### Удалить элемент
+### Delete Item
 ```bash
 curl -X DELETE http://localhost:8080/data/1
 ```
 
-## Использование клиента
+## Using the Client
 
-### Простой клиент (ручной)
+### Manual Client
 
 ```python
 from client.simple_client import CultureAnalyticsClient
 
-# Создать клиент
+# Create client
 client = CultureAnalyticsClient(base_url="http://localhost:8080")
 
-# Проверить health
+# Health check
 response = await client.health_check()
 print(response)  # {'status': 'ok', 'version': '1.0.0'}
 
-# Создать элемент
-item = await client.create_data(name="Продажи", value=1000.50)
-print(item)  # {'id': 1, 'name': 'Продажи', 'value': 1000.5}
+# Create item
+item = await client.create_data(name="Sales", value=1000.50)
+print(item)  # {'id': 1, 'name': 'Sales', 'value': 1000.5}
 
-# Получить список
+# List items
 items = await client.list_data()
 print(items)
 ```
 
-### Сгенерированный клиент (из OpenAPI)
+### Auto-generated Client
 
 ```bash
-# Установить генератор
+# Install generator
 pip install openapi-python-client
 
-# Сгенерировать клиент
+# Generate client
 openapi-python-client generate --path openapi.yaml --output-path client/generated
 
-# Установить сгенерированный клиент
+# Install generated client
 pip install -e client/generated/
 ```
 
-## Запуск тестов
+## Running Tests
 
 ```bash
-# Запустить все тесты
+# Run all tests
 pytest tests/ -v
 
-# С покрытием кода
+# Run with coverage
 pytest tests/ -v --cov=server --cov-report=term-missing
-```
 
-## Выполненные требования
+## Assignment Requirements
 
-✅ **Реализован сервер на aiohttp**
-- 5 endpoint'ов для работы с данными
-- Валидация через Pydantic
-- Обработка ошибок
+✅ **aiohttp server implemented**
+- 5 endpoints for data operations
+- Pydantic validation
+- Error handling
+- Logging
 
-✅ **Реализован клиент на aiohttp**
-- Ручной клиент (`client/simple_client.py`)
-- Автосгенерированный клиент (`client/generated/`)
+✅ **aiohttp client implemented**
+- Manual client (`client/simple_client.py`)
+- Auto-generated client (`client/generated/`)
 
-✅ **Добавлена генерация контрактов OpenAPI**
-- Полная спецификация API в `openapi.yaml`
-- Описание всех endpoint'ов, параметров и ответов
+✅ **OpenAPI contract generation**
+- Complete API specification in `openapi.yaml`
+- Describes all endpoints, parameters, and responses
 
-✅ **Сгенерирован клиент из контрактов**
-- Используется `openapi-python-client`
-- Полная типизация и валидация
+✅ **Client generated from contracts**
+- Using `openapi-python-client`
+- Full typing and validation
 
-✅ **Написаны тесты**
-- 6 тестов для сервера
-- 4 теста для клиента
-- Покрытие всех endpoint'ов и error-кейсов
+✅ **Tests written**
+- 6 server tests
+- 4 client tests
+- Coverage for all endpoints and error cases
 
-## Технологический стек
+## Technology Stack
 
-- **aiohttp 3.9.5** - асинхронный веб-фреймворк для сервера и клиента
-- **pydantic 2.5.0** - валидация и сериализация данных
-- **pytest 7.4.3** - фреймворк для тестирования
-- **pytest-aiohttp 1.0.5** - fixtures для тестирования aiohttp приложений
-- **pytest-cov 4.1.0** - измерение покрытия кода тестами
-- **openapi-python-client** - генератор Python клиента из OpenAPI спецификации
+- **aiohttp 3.9.5** - Async web framework for server and client
+- **pydantic 2.5.0** - Data validation and serialization
+- **pytest 7.4.3** - Testing framework
+- **pytest-aiohttp 1.0.5** - Fixtures for testing aiohttp apps
+- **pytest-cov 4.1.0** - Code coverage measurement
+- **openapi-python-client** - Python client generator from OpenAPI spec
 
-## Архитектурные решения
+## Architectural Decisions
 
-### Хранилище данных
-Используется in-memory хранилище (dict) для упрощения тестового задания. В production следует использовать БД (PostgreSQL, MongoDB и т.д.).
+### Data Storage
+Uses in-memory storage (dict) for simplicity in test assignment. Production would use database (PostgreSQL, MongoDB, etc.).
 
-### Валидация
-Pydantic автоматически валидирует входящие данные и возвращает понятные ошибки при невалидных данных.
+### Configuration
+Environment variables for flexible deployment across different environments.
 
-### Асинхронность
-Использование async/await позволяет эффективно обрабатывать множество одновременных запросов.
+### Logging
+Structured logging with appropriate levels (INFO, WARNING, ERROR) for production readiness.
 
-### Тестирование
-Покрытие тестами гарантирует корректность работы API и упрощает рефакторинг.
+### Validation
+Pydantic automatically validates incoming data and returns clear errors for invalid inputs.
 
-## Проверка кода
+### Asynchronous Design
+Using async/await allows efficient handling of multiple concurrent requests.
+
+### Testing
+Comprehensive test coverage ensures API correctness and simplifies refactoring.
+
+## Code Quality
 
 ```bash
-# Проверка стиля кода
+# Check code style
 flake8 server/ client/simple_client.py tests/
 
-# Автоформатирование
+# Auto-format code
 black server/ client/simple_client.py tests/
 ```
 
-## Возможные улучшения
+## Possible Improvements
 
-- Добавить аутентификацию (JWT)
-- Подключить базу данных (PostgreSQL + SQLAlchemy)
-- Добавить пагинацию для `GET /data`
-- Добавить фильтрацию и сортировку
-- Добавить rate limiting
-- Добавить логирование (structlog)
-- Dockerize приложение
-- Добавить CI/CD (GitHub Actions)
+- Add authentication (JWT)
+- Connect database (PostgreSQL + SQLAlchemy)
+- Add pagination for `GET /data`
+- Add filtering and sorting
+- Add rate limiting
+- Add structured logging (structlog)
+- Dockerize application
+- Add CI/CD (GitHub Actions)
 
-## Автор
+## Author
 
-Виктория Алексеенко
+Viktoria Alekseenko
 Email: vikkischastie@gmail.com
 Telegram: @donnaViktoriia
